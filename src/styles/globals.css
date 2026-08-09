@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #0B0B0B;
+    color: #FFFFFF;
+  }
+
+  ::selection {
+    background: rgba(229, 9, 20, 0.3);
+    color: #fff;
+  }
+
+  * {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-neutral-800/60;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.04) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.6s infinite;
+  }
+
+  .glass {
+    @apply border border-white/10 bg-neutral-900/60 backdrop-blur-xl;
+  }
+
+  .section-label {
+    @apply text-xs font-bold uppercase tracking-[0.2em] text-white;
+  }
+
+  .section-title {
+    @apply mt-1 text-xl font-bold tracking-tight text-white;
+  }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
