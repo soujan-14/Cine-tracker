@@ -20,26 +20,32 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://cinetracker.app'),
   icons: {
     icon: [
+      { url: '/favicon.png', type: 'image/png', sizes: 'any' },
       { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/logo.png', type: 'image/png', sizes: 'any' },
       { url: '/logo.svg', type: 'image/svg+xml' },
     ],
     apple: [
+      { url: '/logo.png', type: 'image/png' },
       { url: '/logo.svg' },
     ],
-    shortcut: ['/favicon.svg'],
+    shortcut: ['/favicon.png'],
   },
   openGraph: {
     type: 'website',
     siteName: 'Cine Tracker',
     title: 'Cine Tracker — Premium Box Office Intelligence',
     description: 'Track trending movies, box office data, and discover new films.',
-    images: [{ url: '/logo-full.svg', width: 800, height: 512, type: 'image/svg+xml' }],
+    images: [
+      { url: '/logo-full.png', width: 1280, height: 720, type: 'image/png' },
+      { url: '/logo-full.svg', width: 800, height: 512, type: 'image/svg+xml' },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Cine Tracker',
     description: 'Track trending movies and box office data.',
-    images: ['/logo-full.svg'],
+    images: ['/logo-full.png', '/logo-full.svg'],
   },
   robots: {
     index: true,

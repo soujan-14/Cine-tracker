@@ -152,7 +152,21 @@ export function MovieDetailClient({ id }: { id: string }) {
   const topCast = credits?.cast.slice(0, 10) ?? [];
   const prediction = movie ? predictMovieSuccess(movie) : null;
 
-  if (movieError) return <ErrorState message={(movieError as Error).message} />;
+  const isAbortError = (err: unknown): boolean => {
+    if (err instanceof DOMException && err.name === 'AbortError') return true;
+    if (err instanceof Error && err.message === 'Request aborted') return true;
+    if (typeof err === 'object' && err !== null && 'name' in err) {
+      const e = err as { name?: string; message?: string };
+      return e.name === 'AbortError' || e.name === 'CanceledError' || e.message?.includes('abort') || false;
+    }
+    return false;
+  };
+
+  if (movieError && !isAbortError(movieError)) {
+    return <ErrorState message={(movieError as Error).message} />;
+  }
+
+  const isStillLoading = loadingMovie || (movieError && isAbortError(movieError)) || !movie;
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] text-white">
@@ -169,7 +183,7 @@ export function MovieDetailClient({ id }: { id: string }) {
       </div>
 
       {/* HERO */}
-      {loadingMovie ? (
+      {isStillLoading ? (
         <HeroSkeleton />
       ) : movie ? (
         <div className="relative h-[75vh] w-full overflow-hidden">
@@ -307,13 +321,13 @@ export function MovieDetailClient({ id }: { id: string }) {
 
         {/* Box Office */}
         <motion.section variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
-          <BoxOfficeSection data={boxOffice} isLoading={loadingMovie || loadingBoxOffice} />
+          <BoxOfficeSection data={boxOffice} isLoading={isStillLoading || loadingBoxOffice} />
         </motion.section>
 
         {/* Overview */}
         <motion.section variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true }}>
           <h2 className="mb-4 text-xl font-bold text-white">Overview</h2>
-          {loadingMovie ? (
+          {isStillLoading ? (
             <SectionSkeleton rows={4} />
           ) : (
             <p className="max-w-3xl leading-relaxed text-white/60">

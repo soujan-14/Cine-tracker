@@ -3,95 +3,131 @@ import axios from 'axios';
 import { Movie, MovieCredits, MovieDetails, MovieVideosResponse, TmdbPaginatedResponse, WatchProvidersResult } from '@/types/tmdb';
 import { DiscoverParams } from '@/services/tmdb';
 
-async function fetcher<T>(url: string): Promise<T> {
-  const response = await axios.get<T>(url);
-  return response.data;
+async function fetcher<T>(url: string, signal?: AbortSignal): Promise<T> {
+  try {
+    const response = await axios.get<T>(url, {
+      signal,
+      timeout: 15000,
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error.name === 'CanceledError' || signal?.aborted) {
+      throw new DOMException('Request aborted', 'AbortError');
+    }
+    throw error;
+  }
+}
+
+function createQueryFn<T>(url: string) {
+  return ({ signal }: { signal: AbortSignal }) => fetcher<T>(url, signal);
+}
+
+function retryDelay(attemptIndex: number): number {
+  return Math.min(1000 * 2 ** attemptIndex, 8000);
 }
 
 export function useTrendingMovies(page = 1) {
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movies', 'trending', page],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/trending?page=${page}`),
-    staleTime: 1000 * 60 * 10, // 10 minutes cache
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/trending?page=${page}`),
+    staleTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useTopRatedMovies(page = 1) {
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movies', 'top-rated', page],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/top-rated?page=${page}`),
-    staleTime: 1000 * 60 * 10, // 10 minutes cache
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/top-rated?page=${page}`),
+    staleTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useUpcomingMovies(page = 1) {
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movies', 'upcoming', page],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/upcoming?page=${page}`),
-    staleTime: 1000 * 60 * 10, // 10 minutes cache
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/upcoming?page=${page}`),
+    staleTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useSearchMovies(query: string, page = 1) {
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movies', 'search', query, page],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/search?query=${encodeURIComponent(query)}&page=${page}`),
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/search?query=${encodeURIComponent(query)}&page=${page}`),
     enabled: Boolean(query && query.trim().length > 0),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useMovieDetails(id: string | number) {
   return useQuery<MovieDetails>({
     queryKey: ['movie', 'details', id],
-    queryFn: () => fetcher<MovieDetails>(`/api/tmdb/movie/${id}/details`),
+    queryFn: createQueryFn<MovieDetails>(`/api/tmdb/movie/${id}/details`),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay,
   });
 }
 
 export function useMovieCredits(id: string | number) {
   return useQuery<MovieCredits>({
     queryKey: ['movie', 'credits', id],
-    queryFn: () => fetcher<MovieCredits>(`/api/tmdb/movie/${id}/credits`),
+    queryFn: createQueryFn<MovieCredits>(`/api/tmdb/movie/${id}/credits`),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useMovieVideos(id: string | number) {
   return useQuery<MovieVideosResponse>({
     queryKey: ['movie', 'videos', id],
-    queryFn: () => fetcher<MovieVideosResponse>(`/api/tmdb/movie/${id}/videos`),
+    queryFn: createQueryFn<MovieVideosResponse>(`/api/tmdb/movie/${id}/videos`),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useSimilarMovies(id: string | number) {
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movie', 'similar', id],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/movie/${id}/similar`),
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/movie/${id}/similar`),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useRecommendedMovies(id: string | number) {
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movie', 'recommendations', id],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/movie/${id}/recommendations`),
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/movie/${id}/recommendations`),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
@@ -105,9 +141,11 @@ export function useDiscoverMovies(params: DiscoverParams) {
 
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movies', 'discover', params],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/discover?${searchParams.toString()}`),
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/discover?${searchParams.toString()}`),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
@@ -120,27 +158,33 @@ export function useRevenueMovies(year?: number) {
 
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movies', 'revenue', year ?? 'all'],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/discover?${searchParams.toString()}`),
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/discover?${searchParams.toString()}`),
     staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function usePopularMovies(page = 1) {
   return useQuery<TmdbPaginatedResponse<Movie>>({
     queryKey: ['movies', 'popular', page],
-    queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/discover?sort_by=popularity.desc&page=${page}&vote_count.gte=100`),
+    queryFn: createQueryFn<TmdbPaginatedResponse<Movie>>(`/api/tmdb/discover?sort_by=popularity.desc&page=${page}&vote_count.gte=100`),
     staleTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
 
 export function useWatchProviders(id: string | number) {
   return useQuery<WatchProvidersResult>({
     queryKey: ['movie', 'watch-providers', id],
-    queryFn: () => fetcher<WatchProvidersResult>(`/api/tmdb/movie/${id}/watch/providers`),
+    queryFn: createQueryFn<WatchProvidersResult>(`/api/tmdb/movie/${id}/watch/providers`),
     enabled: Boolean(id),
     staleTime: 1000 * 60 * 60 * 6,
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay,
   });
 }
