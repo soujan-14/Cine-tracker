@@ -2,9 +2,11 @@
 
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Film, User, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Loader2, AlertCircle, CheckCircle2, Film } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SignupPage() {
@@ -41,8 +43,8 @@ export default function SignupPage() {
         className="w-full max-w-md"
       >
         <div className="mb-8 flex flex-col items-center gap-3">
-          <Film className="h-8 w-8 text-[#E50914]" />
-          <p className="text-sm font-black tracking-[0.2em] text-white">CINE TRACKER</p>
+          <Logo size={56} showText textSize="lg" />
+          <p className="text-xs text-white/40">Track • Watch • Discover</p>
         </div>
 
         <div className="rounded-xl bg-[#141414] p-8">

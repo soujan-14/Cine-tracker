@@ -5,6 +5,7 @@ import {
   MovieCredits,
   MovieVideosResponse,
   TmdbPaginatedResponse,
+  WatchProvidersResult,
 } from '@/types/tmdb';
 
 const TMDB_BASE_URL =
@@ -132,4 +133,9 @@ export async function getRecommendedMovies(
 ): Promise<TmdbPaginatedResponse<Movie>> {
   if (!id) throw new Error('Movie ID is required');
   return fetchFromTmdb<TmdbPaginatedResponse<Movie>>(`/movie/${id}/recommendations`, { page });
+}
+
+export async function getWatchProviders(id: number | string): Promise<WatchProvidersResult> {
+  if (!id) throw new Error('Movie ID is required');
+  return fetchFromTmdb<WatchProvidersResult>(`/movie/${id}/watch/providers`);
 }

@@ -94,6 +94,24 @@ export interface TmdbPaginatedResponse<T = Movie> {
   total_results: number;
 }
 
+export interface WatchProvider {
+  display_priority?: number;
+  logo_path?: string;
+  provider_id?: number;
+  provider_name: string;
+  display_priorities?: Record<string, number>;
+}
+
+export interface WatchProvidersResult {
+  id?: number;
+  results?: Record<string, {
+    link?: string;
+    flatrate?: WatchProvider[];
+    rent?: WatchProvider[];
+    buy?: WatchProvider[];
+  }>;
+}
+
 export interface TmdbApiError {
   message: string;
   status_code?: number;

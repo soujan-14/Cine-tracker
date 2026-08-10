@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
+import { getAuthSecret } from '@/lib/env';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = getAuthSecret();
 const EXPIRES_IN = '7d';
 
 export interface JwtPayload {

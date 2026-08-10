@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import { Movie, MovieCredits, MovieDetails, MovieVideosResponse, TmdbPaginatedResponse } from '@/types/tmdb';
+import { Movie, MovieCredits, MovieDetails, MovieVideosResponse, TmdbPaginatedResponse, WatchProvidersResult } from '@/types/tmdb';
 import { DiscoverParams } from '@/services/tmdb';
 
 async function fetcher<T>(url: string): Promise<T> {
@@ -131,6 +131,16 @@ export function usePopularMovies(page = 1) {
     queryKey: ['movies', 'popular', page],
     queryFn: () => fetcher<TmdbPaginatedResponse<Movie>>(`/api/tmdb/discover?sort_by=popularity.desc&page=${page}&vote_count.gte=100`),
     staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useWatchProviders(id: string | number) {
+  return useQuery<WatchProvidersResult>({
+    queryKey: ['movie', 'watch-providers', id],
+    queryFn: () => fetcher<WatchProvidersResult>(`/api/tmdb/movie/${id}/watch/providers`),
+    enabled: Boolean(id),
+    staleTime: 1000 * 60 * 60 * 6,
     refetchOnWindowFocus: false,
   });
 }

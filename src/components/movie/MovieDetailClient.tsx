@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Star, Clock, Calendar, Play, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { ActionButtons } from '@/components/movie/ActionButtons';
 import { BoxOfficeSection } from '@/components/movie/BoxOfficeSection';
 import {
@@ -154,10 +156,13 @@ export function MovieDetailClient({ id }: { id: string }) {
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] text-white">
-      <div className="absolute top-6 left-6 z-50">
+      <Navbar />
+
+      {/* Floating back button, below navbar */}
+      <div className="sticky top-[68px] z-40 px-4 pt-4 sm:px-6 lg:px-16">
         <Link
           href="/"
-          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/70 px-4 py-2 text-sm text-white/70 backdrop-blur-md transition hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-4 py-1.5 text-xs sm:text-sm text-white/70 backdrop-blur-md transition hover:bg-black/70 hover:text-white"
         >
           <ChevronLeft className="h-4 w-4" /> Back
         </Link>
@@ -388,6 +393,7 @@ export function MovieDetailClient({ id }: { id: string }) {
           {loadingRecommended ? <CardRowSkeleton /> : <MovieRow movies={recommended?.results ?? []} />}
         </motion.section>
       </div>
+      <Footer />
     </div>
   );
 }

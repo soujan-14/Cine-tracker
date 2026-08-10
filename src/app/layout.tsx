@@ -15,20 +15,31 @@ export const metadata: Metadata = {
   },
   description: 'Track trending movies, box office data, and discover new films with Cine Tracker — your premium movie analytics experience.',
   keywords: ['movies', 'box office', 'trending', 'film tracker', 'TMDB', 'cinema'],
-  authors: [{ name: 'Cine Tracker' }],
-  creator: 'Cine Tracker',
+  authors: [{ name: 'Soujan' }],
+  creator: 'Soujan',
   metadataBase: new URL('https://cinetracker.app'),
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/logo.svg', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/logo.svg' },
+    ],
+    shortcut: ['/favicon.svg'],
+  },
   openGraph: {
     type: 'website',
     siteName: 'Cine Tracker',
     title: 'Cine Tracker — Premium Box Office Intelligence',
     description: 'Track trending movies, box office data, and discover new films.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    images: [{ url: '/logo-full.svg', width: 800, height: 512, type: 'image/svg+xml' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Cine Tracker',
     description: 'Track trending movies and box office data.',
+    images: ['/logo-full.svg'],
   },
   robots: {
     index: true,

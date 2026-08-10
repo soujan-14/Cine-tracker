@@ -1,35 +1,29 @@
-import { Film } from 'lucide-react';
-import Link from 'next/link';
+'use client';
 
-const links = [
-  { label: 'Home', href: '/' },
-  { label: 'Discover', href: '/discover' },
-  { label: 'Profile', href: '/profile' },
-];
+import Link from 'next/link';
+import { Logo } from '@/components/ui/Logo';
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/5 bg-[#141414] px-6 py-10 lg:px-12">
-      <div className="mx-auto max-w-[1800px]">
-        <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Film className="h-5 w-5 text-[#E50914]" />
-            <span className="text-sm font-black tracking-[0.15em] text-white">CINE TRACKER</span>
+    <footer className="border-t border-white/5 bg-[#0F0F0F]">
+      <div className="mx-auto max-w-[1800px] px-4 py-8 sm:px-6 lg:px-12 lg:py-10">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <Link href="/" className="focus:outline-none" aria-label="Cine Tracker Home">
+            <Logo size={28} showText textSize="sm" />
+          </Link>
+          <p className="text-xs text-white/35 max-w-sm leading-relaxed">
+            Track trending movies, box office collections, and discover new films.
+          </p>
+          <div className="border-t border-white/5 w-full max-w-xs pt-4 mt-2">
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-xs text-white/30">
+                © {new Date().getFullYear()} Cine Tracker. All rights reserved.
+              </p>
+              <p className="text-xs text-white/40 tracking-wide">
+                Developed by Soujan
+              </p>
+            </div>
           </div>
-
-          <nav className="flex flex-wrap items-center gap-6">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm text-white/40 transition hover:text-white"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          <p className="text-xs text-white/30">© {new Date().getFullYear()} Cine Tracker</p>
         </div>
       </div>
     </footer>
