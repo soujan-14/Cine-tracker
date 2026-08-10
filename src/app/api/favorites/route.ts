@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth, isNextResponse } from '@/lib/requireAuth';
 
 export async function GET(req: NextRequest) {
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req);
   if (isNextResponse(auth)) return auth;
 
   const favorites = await prisma.favorite.findMany({
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req);
   if (isNextResponse(auth)) return auth;
 
   const { movieId } = await req.json();
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = requireAuth(req);
+  const auth = await requireAuth(req);
   if (isNextResponse(auth)) return auth;
 
   const { movieId } = await req.json();

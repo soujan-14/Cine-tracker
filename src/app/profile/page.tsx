@@ -97,7 +97,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <button
-              onClick={() => { logout(); router.push('/'); }}
+              onClick={async () => { await logout(); router.push('/'); }}
               className="flex items-center gap-2 rounded border border-white/10 px-4 py-2 text-sm text-white/50 transition hover:border-red-500/40 hover:text-red-400"
             >
               <LogOut className="h-4 w-4" /> Logout

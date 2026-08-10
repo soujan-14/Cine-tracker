@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import axios from 'axios';
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface AuthUser {
   id: string;
@@ -14,55 +15,65 @@ interface AuthContextValue {
   token: string | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  /** Resolves to true when Supabase requires the user to confirm their email. */
+  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function toAuthUser(user: SupabaseUser | undefined | null): AuthUser | null {
+  if (!user?.email) return null;
+  const name = (user.user_metadata?.name as string | undefined)?.trim();
+  return { id: user.id, email: user.email, name: name || user.email.split('@')[0] };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Rehydrate from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('ct_token');
-      const storedUser = localStorage.getItem('ct_user');
-      if (stored && storedUser) {
-        setToken(stored);
-        setUser(JSON.parse(storedUser));
-      }
-    } catch {
-      // ignore parse errors
-    } finally {
-      setIsLoading(false);
+    const supabase = getSupabaseBrowserClient();
+
+    function applySession(session: Session | null) {
+      setToken(session?.access_token ?? null);
+      setUser(toAuthUser(session?.user));
     }
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => applySession(data.session))
+      .finally(() => setIsLoading(false));
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session);
+    });
+
+    return () => subscription.subscription.unsubscribe();
   }, []);
 
-  function persist(t: string, u: AuthUser) {
-    localStorage.setItem('ct_token', t);
-    localStorage.setItem('ct_user', JSON.stringify(u));
-    setToken(t);
-    setUser(u);
-  }
-
   async function login(email: string, password: string) {
-    const { data } = await axios.post('/api/auth/login', { email, password });
-    persist(data.token, data.user);
+    const { error } = await getSupabaseBrowserClient().auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    if (error) throw error;
   }
 
   async function signup(name: string, email: string, password: string) {
-    const { data } = await axios.post('/api/auth/register', { name, email, password });
-    persist(data.token, data.user);
+    const { data, error } = await getSupabaseBrowserClient().auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: { data: { name: name.trim() } },
+    });
+    if (error) throw error;
+    return !data.session;
   }
 
-  function logout() {
-    localStorage.removeItem('ct_token');
-    localStorage.removeItem('ct_user');
-    setToken(null);
-    setUser(null);
+  async function logout() {
+    const { error } = await getSupabaseBrowserClient().auth.signOut();
+    if (error) throw error;
   }
 
   return (

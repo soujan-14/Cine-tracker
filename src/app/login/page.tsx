@@ -23,7 +23,7 @@ export default function LoginPage() {
       await login(email, password);
       router.push('/');
     } catch (err: any) {
-      setError(err.response?.data?.error ?? 'Login failed. Please try again.');
+      setError(err?.message ?? 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

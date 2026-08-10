@@ -15,6 +15,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
@@ -22,11 +23,14 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      await signup(name, email, password);
+      const confirmationRequired = await signup(name, email, password);
       setSuccess(true);
-      setTimeout(() => router.push('/'), 1000);
+      setNeedsConfirmation(confirmationRequired);
+      if (!confirmationRequired) {
+        setTimeout(() => router.push('/'), 1000);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error ?? 'Registration failed. Please try again.');
+      setError(err?.message ?? 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -58,7 +62,9 @@ export default function SignupPage() {
           {success && (
             <div className="mb-5 flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
               <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-              Account created! Redirecting…
+              {needsConfirmation
+                ? 'Account created! Check your inbox to confirm your email.'
+                : 'Account created! Redirecting…'}
             </div>
           )}
 
