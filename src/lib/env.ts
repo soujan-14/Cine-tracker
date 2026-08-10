@@ -1,20 +1,28 @@
-function getEnv(name: string): string | undefined {
-  const value = process.env[name];
-  return value && value.trim() ? value : undefined;
+export function getAuthSecret(): string {
+  const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    console.warn('[auth] JWT_SECRET / NEXTAUTH_SECRET not set — using insecure fallback.');
+    return 'cine-tracker-dev-insecure-secret-change-me';
+  }
+  return secret;
 }
 
 export function getDatabaseUrl(): string | undefined {
-  return getEnv('DATABASE_URL');
+  return process.env.DATABASE_URL;
 }
 
-export function getAuthSecret(): string {
-  return getEnv('NEXTAUTH_SECRET') || getEnv('JWT_SECRET') || 'dev-secret-change-in-production';
+export function getTmdbApiKey(): string {
+  return (
+    process.env.NEXT_PUBLIC_TMDB_API_KEY ||
+    process.env.TMDB_API_KEY ||
+    'e6f111bca55e80ef8ba6b00fc6aaf9ef'
+  );
 }
 
-export function getAppUrl(): string {
-  return getEnv('NEXTAUTH_URL') || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+export function getTmdbAccessToken(): string | undefined {
+  return process.env.TMDB_ACCESS_TOKEN || process.env.NEXT_PUBLIC_TMDB_ACCESS_TOKEN;
 }
 
-export function hasDatabaseConfig(): boolean {
-  return Boolean(getDatabaseUrl());
+export function getEnv(key: string, fallback?: string): string | undefined {
+  return process.env[key] ?? fallback;
 }
