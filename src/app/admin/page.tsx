@@ -95,8 +95,8 @@ export default function AdminPage() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6">
           <div className="flex items-center gap-4">
-            <Logo size={46} />
-            <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E50914]">Cine Tracker</p><h1 className="mt-1 text-3xl font-black sm:text-4xl">Admin Dashboard</h1><p className="mt-1 text-sm text-white/50">Create and manage searchable movie metadata.</p></div>
+            <Logo size={46} showText={false} />
+            <div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E50914]">CINE TRACKER</p><h1 className="mt-1 text-3xl font-black sm:text-4xl">Admin Dashboard</h1><p className="mt-1 text-sm text-white/50">Create and manage searchable movie metadata.</p></div>
           </div>
           <Link href="/" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"><ArrowLeft className="h-4 w-4" /> Back to Home</Link>
         </div>

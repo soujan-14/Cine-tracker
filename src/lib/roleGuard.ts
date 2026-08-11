@@ -7,7 +7,9 @@ export async function requireRole(
   roles: UserRole[],
 ): Promise<{ userId: string; role: UserRole } | NextResponse> {
   const header = request.headers.get('authorization');
-  const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const bearerToken = header?.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = bearerToken || request.cookies.get('ct_session')?.value || null;
+
   if (!token) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
 
   try {
@@ -17,9 +19,10 @@ export async function requireRole(
       select: { id: true, role: true },
     });
 
-    if (!user || !roles.includes(user.role)) {
-      return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
-    }
+    // Authorization is always decided from the current database role, not
+    // from client storage or a potentially stale JWT role claim.
+    if (!user) return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    if (!roles.includes(user.role)) return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
 
     return { userId: user.id, role: user.role };
   } catch {

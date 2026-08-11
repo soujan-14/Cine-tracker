@@ -29,24 +29,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem('ct_token');
-      const storedUser = localStorage.getItem('ct_user');
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser) as AuthUser);
-      }
-    } catch {
-      localStorage.removeItem('ct_token');
-      localStorage.removeItem('ct_user');
-    } finally {
-      setIsLoading(false);
-    }
+    let mounted = true;
+
+    // Authentication is restored from the secure httpOnly session cookie.
+    // No client-side storage is used as an authorization source.
+    axios
+      .get('/api/auth/session')
+      .then(({ data }) => {
+        if (!mounted) return;
+        setToken(data.token as string);
+        setUser(data.user as AuthUser);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setToken(null);
+        setUser(null);
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   function persist(nextToken: string, nextUser: AuthUser) {
-    localStorage.setItem('ct_token', nextToken);
-    localStorage.setItem('ct_user', JSON.stringify(nextUser));
+    // Keep the token only in memory for existing client API calls. The
+    // authoritative session is the secure httpOnly cookie on the server.
     setToken(nextToken);
     setUser(nextUser);
   }
@@ -65,8 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function logout() {
     void axios.post('/api/auth/logout').catch(() => undefined);
-    localStorage.removeItem('ct_token');
-    localStorage.removeItem('ct_user');
+    // Remove legacy client-side auth artifacts left by older builds.
+    try {
+      localStorage.removeItem('ct_token');
+      localStorage.removeItem('ct_user');
+    } catch {
+      // Ignore storage restrictions; the server cookie remains authoritative.
+    }
     setToken(null);
     setUser(null);
   }

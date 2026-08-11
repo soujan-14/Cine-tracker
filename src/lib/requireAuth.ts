@@ -3,10 +3,11 @@ import { verifyToken, JwtPayload } from '@/lib/auth';
 
 export function requireAuth(req: NextRequest): JwtPayload | NextResponse {
   const header = req.headers.get('authorization') ?? '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) {
-    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
-  }
+  const bearerToken = header.startsWith('Bearer ') ? header.slice(7) : null;
+  const token = bearerToken || req.cookies.get('ct_session')?.value || null;
+
+  if (!token) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+
   try {
     return verifyToken(token);
   } catch {

@@ -3,16 +3,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { generateToken, UserRole } from '@/lib/auth';
-
-function roleFromEnvironment(email: string): UserRole {
-  const normalized = email.trim().toLowerCase();
-  const admins = (process.env.ADMIN_EMAILS ?? 'soujan1407@gmail.com').split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
-  const distributors = (process.env.DISTRIBUTOR_EMAILS ?? 'om123@gmail.com').split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
-  if (admins.includes(normalized)) return 'ADMIN';
-  if (distributors.includes(normalized)) return 'DISTRIBUTOR';
-  return 'USER';
-}
+import { generateToken } from '@/lib/auth';
 
 function withSessionCookie(response: NextResponse, token: string) {
   response.cookies.set('ct_session', token, {
@@ -38,9 +29,11 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return NextResponse.json({ error: 'An account with this email already exists.' }, { status: 409 });
 
-    const role = roleFromEnvironment(email);
+    // Every self-service signup starts as USER. Elevated roles are provisioned
+    // in the database by an administrator/migration, never from an email address
+    // supplied by the browser or an environment-variable allowlist.
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({ data: { name, email, password: hashedPassword, role } });
+    const user = await prisma.user.create({ data: { name, email, password: hashedPassword, role: 'USER' } });
     const token = generateToken(user.id, user.email, user.role);
     return withSessionCookie(NextResponse.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } }, { status: 201 }), token);
   } catch (error) {
