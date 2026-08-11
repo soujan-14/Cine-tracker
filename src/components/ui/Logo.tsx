@@ -9,20 +9,34 @@ interface LogoProps {
 
 /**
  * Single source of truth for Cine Tracker branding.
- * The public logo asset is intentionally rendered without filters, cropping,
- * recoloring, generated fallbacks, or added text so the supplied artwork stays exact.
+ * The supplied artwork is rendered as-is from the canonical /logo.png asset.
+ * The CINE TRACKER wordmark is separate text so the image itself is never modified.
  */
-export function Logo({ size = 36, className = '' }: LogoProps) {
+export function Logo({ size = 36, showText = true, textSize = 'base', className = '' }: LogoProps) {
+  const textSizeClass =
+    textSize === 'sm'
+      ? 'text-sm tracking-[0.15em]'
+      : textSize === 'lg'
+        ? 'text-lg tracking-[0.1em]'
+        : 'text-base tracking-wider';
+
   return (
-    <img
-      src="/logo.png"
-      alt="Cine Tracker"
-      width={size}
-      height={size}
-      loading="eager"
-      draggable={false}
-      className={`block shrink-0 object-contain ${className}`}
-      style={{ width: size, height: size }}
-    />
+    <div className={`flex shrink-0 items-center gap-2 ${className}`}>
+      <img
+        src="/logo.png"
+        alt="Cine Tracker Logo"
+        width={size}
+        height={size}
+        loading="eager"
+        draggable={false}
+        className="block shrink-0 object-contain"
+        style={{ width: size, height: size }}
+      />
+      {showText ? (
+        <span className={`hidden font-black text-white sm:block ${textSizeClass}`}>
+          CINE<span className="text-[#E50914]">TRACKER</span>
+        </span>
+      ) : null}
+    </div>
   );
 }
