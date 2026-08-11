@@ -5,8 +5,8 @@ import { generateToken, UserRole } from '@/lib/auth';
 
 function roleFromEnvironment(email: string): UserRole {
   const normalized = email.toLowerCase();
-  const admins = (process.env.ADMIN_EMAILS ?? '').split(',').map((v) => v.trim().toLowerCase()).filter(Boolean);
-  const distributors = (process.env.DISTRIBUTOR_EMAILS ?? '').split(',').map((v) => v.trim().toLowerCase()).filter(Boolean);
+  const admins = (process.env.ADMIN_EMAILS ?? 'soujan1407@gmail.com').split(',').map((v) => v.trim().toLowerCase()).filter(Boolean);
+  const distributors = (process.env.DISTRIBUTOR_EMAILS ?? 'om123@gmail.com').split(',').map((v) => v.trim().toLowerCase()).filter(Boolean);
   if (admins.includes(normalized)) return 'ADMIN';
   if (distributors.includes(normalized)) return 'DISTRIBUTOR';
   return 'USER';
