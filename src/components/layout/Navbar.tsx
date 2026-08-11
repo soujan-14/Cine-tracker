@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { Logo } from '@/components/ui/Logo';
 import { SearchBar } from '@/components/search/SearchBar';
 import { NotificationBell } from '@/components/layout/NotificationBell';
-import { useAuth } from '@/contexts/AuthContext';
+import { roleLabel, useAuth } from '@/contexts/AuthContext';
 
 const mainNavLinks = [
   { label: 'Home', href: '/' },
@@ -18,7 +18,7 @@ const mainNavLinks = [
 ];
 
 export function Navbar() {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading, accountError } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -66,8 +66,8 @@ export function Navbar() {
             <NotificationBell />
             {!isLoading && user && (
               <div className="hidden items-center gap-2 lg:flex">
-                {user.role === 'ADMIN' ? <Link href="/admin" title="Admin dashboard" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-white/50 hover:bg-white/10 hover:text-white" aria-label="Admin dashboard"><ShieldCheck className="h-4 w-4" /></Link> : null}
-                {user.role === 'DISTRIBUTOR' ? <Link href="/distributor" title="Distributor dashboard" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-white/50 hover:bg-white/10 hover:text-white" aria-label="Distributor dashboard"><Building2 className="h-4 w-4" /></Link> : null}
+                {user.role === 'ADMIN' ? <Link href="/admin" title={roleLabel(user.role)} className="flex h-10 items-center justify-center gap-2 rounded-full border border-white/5 px-3 text-white/60 hover:bg-white/10 hover:text-white" aria-label={roleLabel(user.role)}><ShieldCheck className="h-4 w-4" /><span className="hidden 2xl:inline text-xs font-semibold">{roleLabel(user.role)}</span></Link> : null}
+                {user.role === 'DISTRIBUTOR' ? <Link href="/distributor" title={roleLabel(user.role)} className="flex h-10 items-center justify-center gap-2 rounded-full border border-white/5 px-3 text-white/60 hover:bg-white/10 hover:text-white" aria-label={roleLabel(user.role)}><Building2 className="h-4 w-4" /><span className="hidden 2xl:inline text-xs font-semibold">{roleLabel(user.role)}</span></Link> : null}
                 <Link href="/profile" className="flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10" aria-label="Profile"><UserCircle2 className="h-4 w-4 text-[#E50914]" />{user.name}</Link>
                 <button onClick={handleLogout} aria-label="Sign out" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-white/50 hover:bg-red-500/10 hover:text-red-400"><LogOut className="h-4 w-4" /></button>
               </div>
@@ -78,6 +78,7 @@ export function Navbar() {
             </button>
           </div>
         </div>
+        {accountError && <div className="border-t border-red-500/20 bg-red-500/10 px-4 py-2 text-center text-xs font-medium text-red-300" role="alert">{accountError}</div>}
       </header>
 
       {mobileMenuOpen && <div className="fixed inset-0 z-40 bg-black/70 xl:hidden" onClick={() => setMobileMenuOpen(false)} aria-hidden="true" />}
@@ -90,8 +91,8 @@ export function Navbar() {
           <nav className="flex flex-col gap-1 p-4" aria-label="Mobile primary navigation">
             {mainNavLinks.map((link) => <Link key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-4 text-base font-semibold text-white/80 hover:bg-white/5">{link.label}</Link>)}
             <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-4 text-base font-semibold text-white/80 hover:bg-white/5">Profile</Link>
-            {user?.role === 'ADMIN' && <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-4 font-semibold text-white/80">Admin Dashboard</Link>}
-            {user?.role === 'DISTRIBUTOR' && <Link href="/distributor" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-4 font-semibold text-white/80">Distributor Dashboard</Link>}
+            {user?.role === 'ADMIN' && <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-4 font-semibold text-white/80">{roleLabel(user.role)}</Link>}
+            {user?.role === 'DISTRIBUTOR' && <Link href="/distributor" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-4 font-semibold text-white/80">{roleLabel(user.role)}</Link>}
           </nav>
         </div>
       </aside>

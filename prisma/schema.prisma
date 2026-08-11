@@ -76,6 +76,7 @@ model BoxOffice {
   territory         String?
   verified          Boolean  @default(false)
   createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   movie             Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   distributor       User     @relation("DistributorBoxOffice", fields: [distributorId], references: [id], onDelete: Cascade)
   @@index([movieId, collectionDate])
