@@ -17,9 +17,7 @@ function parseDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function parseId(value: string): string | null {
-  return value.trim() || null;
-}
+function parseId(value: string): string | null { return value.trim() || null; }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const auth = await requireRole(request, ['DISTRIBUTOR', 'ADMIN']);
@@ -27,11 +25,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   const { id: rawId } = await context.params;
   const id = parseId(rawId);
   if (!id) return NextResponse.json({ error: 'Invalid box-office ID.' }, { status: 400 });
-
   const record = await prisma.boxOffice.findUnique({ where: { id }, include: { movie: { select: { id: true, title: true } } } });
   if (!record) return NextResponse.json({ error: 'Collection record not found.' }, { status: 404 });
   if (auth.role !== 'ADMIN' && record.distributorId !== auth.userId) return NextResponse.json({ error: 'Unauthorized.' }, { status: 403 });
-
   return NextResponse.json(record, { headers: { 'Cache-Control': 'no-store' } });
 }
 
@@ -50,35 +46,17 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const body = await request.json();
     const dailyCollection = collectionValue(body.dailyCollection);
     const weekendCollection = collectionValue(body.weekendCollection);
-    const totalCollection = collectionValue(body.totalCollection);
     const collectionDate = parseDate(body.collectionDate);
     const territory = typeof body.territory === 'string' ? body.territory.trim() || null : null;
-    const notes = typeof body.notes === 'string' ? body.notes.trim() || null : null;
-
     if (!collectionDate) return NextResponse.json({ error: 'Invalid collection date.' }, { status: 400 });
-    if (dailyCollection === null && weekendCollection === null && totalCollection === null) {
-      return NextResponse.json({ error: 'Add a daily, weekend, or total collection.' }, { status: 400 });
-    }
+    if (dailyCollection === null && weekendCollection === null) return NextResponse.json({ error: 'Add a daily or weekend collection.' }, { status: 400 });
 
-    // A distributor cannot change ownership or the movie association through an edit.
-    // The authenticated role and existing record determine the editable scope.
+    // Ownership and movie association are immutable for distributor edits.
     const record = await prisma.boxOffice.update({
       where: { id },
-      data: {
-        dailyCollection,
-        weekendCollection,
-        collectionDate,
-        territory,
-        ...(auth.role === 'ADMIN' ? { verified: true } : {}),
-      },
+      data: { dailyCollection, weekendCollection, collectionDate, territory, ...(auth.role === 'ADMIN' ? { verified: true } : {}) },
       include: { movie: { select: { id: true, title: true } } },
     });
-
-    // totalCollection and notes are intentionally not persisted because the current
-    // Prisma schema has no corresponding BoxOffice columns. The existing schema's
-    // daily + weekend values remain the source of truth.
-    void totalCollection;
-    void notes;
 
     revalidatePath('/box-office');
     revalidatePath('/admin');
