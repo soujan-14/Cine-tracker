@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  function persist(nextToken: unknown, nextUser: unknown) {
+  function persist(nextToken: unknown, nextUser: unknown): AuthUser {
     const normalizedUser = normalizeUser(nextUser);
     if (typeof nextToken !== 'string' || !nextToken) throw new Error(ACCOUNT_ERROR);
 
@@ -94,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(normalizedUser);
     setAccountError(null);
     setIsLoading(false);
+    return normalizedUser;
   }
 
   async function login(email: string, password: string) {
@@ -103,8 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const { data } = await axios.post('/api/auth/login', { email, password });
-      persist(data.token, data.user);
-      return normalizeUser(data.user);
+      return persist(data.token, data.user);
     } catch (error) {
       setIsLoading(false);
       throw error;
@@ -118,8 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const { data } = await axios.post('/api/auth/register', { name, email, password });
-      persist(data.token, data.user);
-      return normalizeUser(data.user);
+      return persist(data.token, data.user);
     } catch (error) {
       setIsLoading(false);
       throw error;
