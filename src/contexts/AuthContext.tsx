@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import axios from 'axios';
 
 export type UserRole = 'USER' | 'ADMIN' | 'DISTRIBUTOR';
@@ -16,6 +16,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
+  accountError: string | null;
   login: (email: string, password: string) => Promise<AuthUser>;
   signup: (name: string, email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
@@ -23,30 +24,61 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const ACCOUNT_ERROR = 'Unable to load account permissions. Please try again.';
+
+function normalizeRole(value: unknown): UserRole | null {
+  const role = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  if (role === 'USER' || role === 'ADMIN' || role === 'DISTRIBUTOR') return role;
+  return null;
+}
+
+function normalizeUser(value: unknown): AuthUser {
+  if (!value || typeof value !== 'object') throw new Error(ACCOUNT_ERROR);
+
+  const candidate = value as Partial<AuthUser>;
+  const role = normalizeRole(candidate.role);
+  if (!candidate.id || !candidate.name || !candidate.email || !role) {
+    throw new Error(ACCOUNT_ERROR);
+  }
+
+  return {
+    id: candidate.id,
+    name: candidate.name,
+    email: candidate.email,
+    role,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const authOperationRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
+    const operation = authOperationRef.current;
 
-    // Authentication is restored from the secure httpOnly session cookie.
-    // No client-side storage is used as an authorization source.
+    // Restore the server session once. A newer login/logout operation must
+    // never be overwritten by this older request completing later.
     axios
       .get('/api/auth/session')
       .then(({ data }) => {
-        if (!mounted) return;
-        setToken(data.token as string);
-        setUser(data.user as AuthUser);
+        if (!mounted || operation !== authOperationRef.current) return;
+        const nextUser = normalizeUser(data.user);
+        setToken(typeof data.token === 'string' ? data.token : null);
+        setUser(nextUser);
+        setAccountError(null);
       })
-      .catch(() => {
-        if (!mounted) return;
+      .catch((error) => {
+        if (!mounted || operation !== authOperationRef.current) return;
         setToken(null);
         setUser(null);
+        setAccountError(axios.isAxiosError(error) && error.response?.status !== 401 ? ACCOUNT_ERROR : null);
       })
       .finally(() => {
-        if (mounted) setIsLoading(false);
+        if (mounted && operation === authOperationRef.current) setIsLoading(false);
       });
 
     return () => {
@@ -54,26 +86,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  function persist(nextToken: string, nextUser: AuthUser) {
-    // Keep the token only in memory for existing client API calls. The
-    // authoritative session is the secure httpOnly cookie on the server.
+  function persist(nextToken: unknown, nextUser: unknown) {
+    const normalizedUser = normalizeUser(nextUser);
+    if (typeof nextToken !== 'string' || !nextToken) throw new Error(ACCOUNT_ERROR);
+
     setToken(nextToken);
-    setUser(nextUser);
+    setUser(normalizedUser);
+    setAccountError(null);
+    setIsLoading(false);
   }
 
   async function login(email: string, password: string) {
-    const { data } = await axios.post('/api/auth/login', { email, password });
-    persist(data.token, data.user);
-    return data.user as AuthUser;
+    authOperationRef.current += 1;
+    setAccountError(null);
+    setIsLoading(true);
+
+    try {
+      const { data } = await axios.post('/api/auth/login', { email, password });
+      persist(data.token, data.user);
+      return normalizeUser(data.user);
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
+    }
   }
 
   async function signup(name: string, email: string, password: string) {
-    const { data } = await axios.post('/api/auth/register', { name, email, password });
-    persist(data.token, data.user);
-    return data.user as AuthUser;
+    authOperationRef.current += 1;
+    setAccountError(null);
+    setIsLoading(true);
+
+    try {
+      const { data } = await axios.post('/api/auth/register', { name, email, password });
+      persist(data.token, data.user);
+      return normalizeUser(data.user);
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
+    }
   }
 
   function logout() {
+    authOperationRef.current += 1;
     void axios.post('/api/auth/logout').catch(() => undefined);
     // Remove legacy client-side auth artifacts left by older builds.
     try {
@@ -84,9 +138,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setToken(null);
     setUser(null);
+    setAccountError(null);
+    setIsLoading(false);
   }
 
-  return <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, token, isLoading, accountError, login, signup, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
@@ -99,4 +159,10 @@ export function roleHome(role: UserRole): string {
   if (role === 'ADMIN') return '/admin';
   if (role === 'DISTRIBUTOR') return '/distributor';
   return '/';
+}
+
+export function roleLabel(role: UserRole): string {
+  if (role === 'ADMIN') return 'Admin Dashboard';
+  if (role === 'DISTRIBUTOR') return 'Distributor Dashboard';
+  return 'Profile';
 }
