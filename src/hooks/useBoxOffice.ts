@@ -6,12 +6,21 @@ function retryDelay(attemptIndex: number): number {
   return Math.min(1000 * 2 ** attemptIndex, 8000);
 }
 
+function currentMovieId(): number | null {
+  if (typeof window === 'undefined') return null;
+  const match = window.location.pathname.match(/^\/movie\/(-?\d+)/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isInteger(value) ? value : null;
+}
+
 export function useBoxOffice(
-  movieId: number | null | undefined,
   imdbId: string | null | undefined,
   revenue: number,
   budget: number,
 ) {
+  const movieId = currentMovieId();
+
   return useQuery<BoxOfficeData>({
     queryKey: ['boxoffice', movieId ?? 'null', imdbId ?? 'null', revenue, budget],
     queryFn: async ({ signal }) => {
