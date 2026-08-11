@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
+    void axios.post('/api/auth/logout').catch(() => undefined);
     localStorage.removeItem('ct_token');
     localStorage.removeItem('ct_user');
     setToken(null);

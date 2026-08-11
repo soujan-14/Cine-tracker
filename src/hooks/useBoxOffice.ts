@@ -6,18 +6,28 @@ function retryDelay(attemptIndex: number): number {
   return Math.min(1000 * 2 ** attemptIndex, 8000);
 }
 
+function currentMovieId(): number | null {
+  if (typeof window === 'undefined') return null;
+  const match = window.location.pathname.match(/^\/movie\/(-?\d+)/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isInteger(value) ? value : null;
+}
+
 export function useBoxOffice(
   imdbId: string | null | undefined,
   revenue: number,
-  budget: number
+  budget: number,
 ) {
+  const movieId = currentMovieId();
+
   return useQuery<BoxOfficeData>({
-    queryKey: ['boxoffice', imdbId ?? 'null', revenue, budget],
+    queryKey: ['boxoffice', movieId ?? 'null', imdbId ?? 'null', revenue, budget],
     queryFn: async ({ signal }) => {
       try {
         const response = await axios.get<BoxOfficeData>(
-          `/api/boxoffice/${imdbId ?? 'null'}?revenue=${revenue}&budget=${budget}`,
-          { signal, timeout: 15000 }
+          `/api/boxoffice/${imdbId ?? 'null'}?movieId=${movieId ?? ''}&revenue=${revenue}&budget=${budget}`,
+          { signal, timeout: 15000 },
         );
         return response.data;
       } catch (error: any) {
@@ -27,8 +37,8 @@ export function useBoxOffice(
         throw error;
       }
     },
-    enabled: Boolean(imdbId || revenue > 0),
-    staleTime: 1000 * 60 * 60,
+    enabled: Boolean(movieId || imdbId || revenue > 0),
+    staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     retry: 2,
     retryDelay,

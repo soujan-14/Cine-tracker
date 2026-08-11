@@ -1,17 +1,14 @@
 import { NextResponse } from 'next/server';
-import { searchMovies } from '@/services/tmdb';
+import { searchMovieCatalog } from '@/services/movieCatalog';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query') || '';
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const data = await searchMovies(query, page);
-    return NextResponse.json(data);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'Failed to search movies' },
-      { status: 500 }
-    );
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    return NextResponse.json(await searchMovieCatalog(query, page));
+  } catch (error) {
+    console.error('[tmdb/search]', error);
+    return NextResponse.json({ error: 'Failed to search movies.' }, { status: 500 });
   }
 }

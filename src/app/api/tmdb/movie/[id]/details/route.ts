@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMovieDetails } from '@/services/tmdb';
+import { getMovieDetailsMerged } from '@/services/movieCatalog';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const data = await getMovieDetails(id);
-    return NextResponse.json(data);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(await getMovieDetailsMerged(id));
+  } catch (error) {
+    console.error('[movie/details]', error);
+    return NextResponse.json({ error: 'Movie details are unavailable.' }, { status: 404 });
   }
 }

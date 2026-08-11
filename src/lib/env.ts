@@ -1,9 +1,6 @@
 export function getAuthSecret(): string {
   const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
-  if (!secret) {
-    console.warn('[auth] JWT_SECRET / NEXTAUTH_SECRET not set — using insecure fallback.');
-    return 'cine-tracker-dev-insecure-secret-change-me';
-  }
+  if (!secret) throw new Error('JWT_SECRET / NEXTAUTH_SECRET must be configured.');
   return secret;
 }
 
@@ -11,12 +8,8 @@ export function getDatabaseUrl(): string | undefined {
   return process.env.DATABASE_URL;
 }
 
-export function getTmdbApiKey(): string {
-  return (
-    process.env.NEXT_PUBLIC_TMDB_API_KEY ||
-    process.env.TMDB_API_KEY ||
-    'e6f111bca55e80ef8ba6b00fc6aaf9ef'
-  );
+export function getTmdbApiKey(): string | undefined {
+  return process.env.NEXT_PUBLIC_TMDB_API_KEY || process.env.TMDB_API_KEY;
 }
 
 export function getTmdbAccessToken(): string | undefined {

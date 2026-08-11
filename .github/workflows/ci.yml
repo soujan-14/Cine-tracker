@@ -16,6 +16,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm run build
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/cine_tracker

@@ -44,26 +44,40 @@ model Watchlist {
 }
 
 model Movie {
-  id              Int         @id
-  title           String
-  customBoxOffice Decimal?    @db.Decimal(18, 2)
-  customPoster    String?
-  customTrailer   String?
-  customCast      Json?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  boxOffice       BoxOffice[]
+  id               Int         @id
+  tmdbId           Int?        @unique
+  title            String
+  originalTitle    String?
+  overview         String?
+  customBoxOffice  Decimal?    @db.Decimal(18, 2)
+  customPoster     String?
+  customBackdrop   String?
+  customTrailer    String?
+  customCast       Json?
+  customCrew       Json?
+  customGenres     Json?
+  releaseDate      DateTime?
+  runtime          Int?
+  language         String?
+  budget           Decimal?    @db.Decimal(18, 2)
+  isCustom         Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  boxOffice        BoxOffice[]
 }
 
 model BoxOffice {
-  id               String   @id @default(uuid())
-  movieId          Int
-  distributorId    String
-  dailyCollection  Decimal? @db.Decimal(18, 2)
+  id                String   @id @default(uuid())
+  movieId           Int
+  distributorId     String
+  dailyCollection   Decimal? @db.Decimal(18, 2)
   weekendCollection Decimal? @db.Decimal(18, 2)
-  createdAt        DateTime @default(now())
-  movie            Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  distributor     User     @relation("DistributorBoxOffice", fields: [distributorId], references: [id], onDelete: Cascade)
-  @@index([movieId, createdAt])
-  @@index([distributorId, createdAt])
+  collectionDate    DateTime @default(now())
+  territory         String?
+  verified          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  movie             Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  distributor       User     @relation("DistributorBoxOffice", fields: [distributorId], references: [id], onDelete: Cascade)
+  @@index([movieId, collectionDate])
+  @@index([distributorId, collectionDate])
 }

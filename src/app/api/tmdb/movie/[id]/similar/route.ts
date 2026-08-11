@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSimilarMovies } from '@/services/tmdb';
+import { getSimilarMoviesMerged } from '@/services/movieCatalog';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const page = Number(req.nextUrl.searchParams.get('page') ?? 1);
-    const data = await getSimilarMovies(id, page);
-    return NextResponse.json(data);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const page = Math.max(1, Number(req.nextUrl.searchParams.get('page') ?? 1));
+    return NextResponse.json(await getSimilarMoviesMerged(id, page));
+  } catch (error) {
+    console.error('[movie/similar]', error);
+    return NextResponse.json({ error: 'Similar movies are unavailable.' }, { status: 404 });
   }
 }

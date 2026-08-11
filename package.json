@@ -6,7 +6,7 @@
     "dev": "node -r ./scripts/register-localstorage.js ./node_modules/next/dist/bin/next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "format": "prettier --write .",
     "postinstall": "prisma generate",
     "prepare": "husky"
