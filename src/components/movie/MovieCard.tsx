@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Play, Star, Ticket, XCircle } from 'lucide-react';
-import { useMemo } from 'react';
+import { MouseEvent, useMemo } from 'react';
 import { Movie } from '@/types/tmdb';
 import { BoxOfficeData } from '@/types/boxoffice';
 import { getImageUrl } from '@/services/tmdb';
@@ -25,9 +25,8 @@ export function MovieCard({ movie, index = 0, fluid = false, boxOffice }: MovieC
   const boxOfficeDisplay = gross ? formatBoxOffice(gross) : null;
   const ottUrl = getDefaultOttUrl(movie.title);
 
-  const handleBooking = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const handleBooking = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault(); event.stopPropagation();
     const country = await detectUserCountry();
     window.open(getBookingUrl(movie.title, country), '_blank', 'noopener,noreferrer');
   };
