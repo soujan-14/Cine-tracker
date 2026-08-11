@@ -7,11 +7,7 @@ interface LogoProps {
   className?: string;
 }
 
-/**
- * Single source of truth for Cine Tracker branding.
- * The supplied artwork is rendered as-is from the canonical /logo.png asset.
- * The CINE TRACKER wordmark is separate text so the image itself is never modified.
- */
+/** Cine Tracker brand mark: red C with the responsive Cine Tracker wordmark. */
 export function Logo({ size = 36, showText = true, textSize = 'base', className = '' }: LogoProps) {
   const textSizeClass =
     textSize === 'sm'
@@ -22,16 +18,13 @@ export function Logo({ size = 36, showText = true, textSize = 'base', className 
 
   return (
     <div className={`flex min-w-0 shrink-0 items-center gap-2 ${className}`}>
-      <img
-        src="/logo.png"
-        alt="Cine Tracker Logo"
-        width={size}
-        height={size}
-        loading="eager"
-        draggable={false}
-        className="block shrink-0 object-contain"
-        style={{ width: size, height: size }}
-      />
+      <span
+        aria-hidden="true"
+        className="flex shrink-0 items-center justify-center font-black leading-none text-[#E50914]"
+        style={{ width: size, height: size, fontSize: Math.max(24, Math.round(size * 0.92)) }}
+      >
+        C
+      </span>
       {showText ? (
         <span className={`whitespace-nowrap font-black text-white ${textSizeClass}`}>
           CINE<span className="text-[#E50914]"> TRACKER</span>
