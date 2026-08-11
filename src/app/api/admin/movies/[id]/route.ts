@@ -29,7 +29,6 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
   const { id: rawId } = await context.params;
   const id = parseId(rawId);
   if (id === null) return NextResponse.json({ error: 'Invalid movie ID.' }, { status: 400 });
-
   try {
     const body = await request.json();
     const title = typeof body.title === 'string' ? body.title.trim() : '';
@@ -44,16 +43,13 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     if (customPoster instanceof NextResponse) return customPoster;
     if (customBackdrop instanceof NextResponse) return customBackdrop;
     if (customTrailer instanceof NextResponse) return customTrailer;
-
     const existing = await prisma.movie.findUnique({ where: { id }, select: { id: true } });
     if (!existing) return NextResponse.json({ error: 'Movie not found.' }, { status: 404 });
     if (tmdbId) {
       const duplicate = await prisma.movie.findFirst({ where: { tmdbId, NOT: { id } }, select: { id: true } });
       if (duplicate) return NextResponse.json({ error: 'Another movie already uses this TMDB ID.' }, { status: 409 });
     }
-
     const movie = await prisma.movie.update({ where: { id }, data: { tmdbId, title, originalTitle: normalizeString(body.originalTitle), overview: normalizeString(body.overview), customPoster, customBackdrop, customTrailer, customCast: Array.isArray(body.customCast) ? body.customCast : null, customCrew: Array.isArray(body.customCrew) ? body.customCrew : null, customGenres: Array.isArray(body.customGenres) ? body.customGenres : null, releaseDate, runtime: optionalInt(body.runtime), language: normalizeString(body.language), budget: optionalNumber(body.budget), customBoxOffice: optionalNumber(body.customBoxOffice), isCustom: true } });
-
     revalidatePath('/'); revalidatePath('/discover'); revalidatePath('/box-office'); revalidatePath('/admin'); revalidatePath(`/movie/${movie.id}`); revalidatePath(`/admin/movies/${movie.id}/edit`);
     return NextResponse.json(movie, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
