@@ -13,34 +13,48 @@ export function SearchBar() {
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const { data, isFetching, isError } = useSearchMovies(query);
   const results = data?.results?.slice(0, 8) ?? [];
 
-  // Debounce input → query
+  const focusSearch = useCallback(() => {
+    setOpen(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
   const handleInput = useCallback((value: string) => {
     setInput(value);
-    setActiveIndex(-1);
+    setActiveIndex(0);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setQuery(value.trim());
-      setOpen(value.trim().length > 0);
-    }, 350);
+    }, 300);
   }, []);
 
-  // Close on outside click
+  useEffect(() => () => debounceRef.current && clearTimeout(debounceRef.current), []);
+
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
+    const onClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
+
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault();
+        focusSearch();
+      }
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [focusSearch]);
 
   function navigate(id: number) {
     setOpen(false);
@@ -50,112 +64,55 @@ export function SearchBar() {
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (!open) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, results.length - 1));
+      setActiveIndex((i) => Math.min(i + 1, Math.max(results.length - 1, 0)));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter' && activeIndex >= 0 && results[activeIndex]) {
+    } else if (e.key === 'Enter' && results[activeIndex]) {
+      e.preventDefault();
       navigate(results[activeIndex].id);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
     }
   }
 
-  const showDropdown = open && query.length > 0;
-
   return (
-    <div ref={containerRef} className="relative w-full max-w-xs sm:max-w-sm">
-      {/* Input */}
-      <div className="flex items-center gap-2 rounded-full border border-white/10 bg-neutral-900/80 px-3 py-2 backdrop-blur-md transition focus-within:border-white/30">
-        {isFetching ? (
-          <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin text-white/60" />
-        ) : (
-          <Search className="h-4 w-4 flex-shrink-0 text-slate-400" />
-        )}
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => handleInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => query.length > 0 && setOpen(true)}
-          placeholder="Search movies…"
-          className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none"
-          aria-label="Search movies"
-          aria-autocomplete="list"
-        />
-        {input && (
-          <button
-            onClick={() => { setInput(''); setQuery(''); setOpen(false); }}
-            className="flex-shrink-0 text-slate-500 hover:text-slate-300 transition"
-            aria-label="Clear search"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+    <div ref={containerRef} className="relative">
+      <button onClick={focusSearch} aria-label="Search movies" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 text-white/70 transition hover:bg-white/10 hover:text-white">
+        <Search className="h-[18px] w-[18px]" />
+      </button>
 
-      {/* Dropdown */}
       <AnimatePresence>
-        {showDropdown && (
-          <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-xl border border-white/10 bg-[#141414] shadow-2xl shadow-black/80 backdrop-blur-xl"
-            role="listbox"
-          >
-            {/* Error */}
-            {isError && (
-              <div className="flex items-center gap-2 px-4 py-5 text-sm text-red-400">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                Failed to load results. Try again.
+        {open && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="fixed inset-0 z-[100] bg-black/90 p-4 backdrop-blur-xl sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-[430px] sm:rounded-2xl sm:border sm:border-white/10 sm:bg-[#111]/95 sm:p-3 sm:shadow-2xl">
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-3">
+              {isFetching ? <Loader2 className="h-5 w-5 animate-spin text-white/50" /> : <Search className="h-5 w-5 text-white/50" />}
+              <input ref={inputRef} value={input} onChange={(e) => handleInput(e.target.value)} onKeyDown={handleKeyDown} autoComplete="off" placeholder="Search movies..." className="w-full bg-transparent text-base text-white outline-none placeholder:text-white/35" aria-label="Search movies" aria-autocomplete="list" />
+              <button onClick={() => setOpen(false)} aria-label="Close search" className="rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+
+            {query && (
+              <div className="mt-3 max-h-[calc(100vh-110px)] overflow-y-auto">
+                {isError ? <div className="flex items-center gap-2 p-4 text-sm text-red-400"><AlertCircle className="h-4 w-4" /> Failed to load results.</div> : null}
+                {!isError && !isFetching && results.length === 0 ? <div className="p-6 text-center text-sm text-white/40">No results found for “{query}”</div> : null}
+                {results.length > 0 ? (
+                  <>
+                    <button onClick={() => navigate(results[0].id)} className="mb-2 flex w-full gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:scale-[1.01] hover:bg-white/10">
+                      <div className="relative h-32 w-22 shrink-0 overflow-hidden rounded-lg bg-white/5">
+                        <Image src={getImageUrl(results[0].poster_path, 'w300')} alt={results[0].title} fill sizes="88px" className="object-cover" />
+                      </div>
+                      <div className="min-w-0 py-1"><p className="text-xs font-semibold uppercase tracking-wider text-[#E50914]">Best match</p><p className="mt-1 text-lg font-bold text-white">{results[0].title}</p><p className="mt-1 text-sm text-white/45">{results[0].release_date?.slice(0, 4) || '—'}</p><p className="mt-3 line-clamp-3 text-xs text-white/50">{results[0].overview || 'Open movie details'}</p></div>
+                    </button>
+                    {results.slice(1).map((movie, i) => (
+                      <button key={movie.id} onClick={() => navigate(movie.id)} onMouseEnter={() => setActiveIndex(i + 1)} className={`flex w-full items-center gap-3 rounded-lg border-t border-white/5 px-2 py-2.5 text-left transition ${activeIndex === i + 1 ? 'bg-white/10' : 'hover:bg-white/5'}`}>
+                        <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded bg-white/5"><Image src={getImageUrl(movie.poster_path, 'w300')} alt={movie.title} fill sizes="40px" className="object-cover" /></div>
+                        <div className="min-w-0"><p className="truncate text-sm font-medium text-white">{movie.title}</p><p className="text-xs text-white/40">{movie.release_date?.slice(0, 4) || '—'}</p></div>
+                      </button>
+                    ))}
+                  </>
+                ) : null}
               </div>
             )}
-
-            {/* No results */}
-            {!isError && !isFetching && results.length === 0 && (
-              <div className="px-4 py-5 text-center text-sm text-slate-500">
-                No results found for &ldquo;{query}&rdquo;
-              </div>
-            )}
-
-            {/* Results */}
-            {results.map((movie, i) => {
-              const year = movie.release_date ? movie.release_date.slice(0, 4) : '—';
-              const isActive = i === activeIndex;
-              return (
-                <button
-                  key={movie.id}
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => navigate(movie.id)}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
-                    isActive ? 'bg-white/10' : 'hover:bg-white/5'
-                  } ${i !== 0 ? 'border-t border-white/5' : ''}`}
-                >
-                  {/* Poster thumbnail */}
-                  <div className="relative h-12 w-8 flex-shrink-0 overflow-hidden rounded-md bg-slate-800">
-                    <Image
-                      src={getImageUrl(movie.poster_path, 'w300')}
-                      alt={movie.title}
-                      fill
-                      sizes="32px"
-                      className="object-cover"
-                    />
-                  </div>
-                  {/* Text */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-200">{movie.title}</p>
-                    <p className="text-xs text-slate-500">{year}</p>
-                  </div>
-                </button>
-              );
-            })}
           </motion.div>
         )}
       </AnimatePresence>
