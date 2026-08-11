@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Star, Ticket, XCircle } from 'lucide-react';
 import { MouseEvent, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Movie } from '@/types/tmdb';
 import { BoxOfficeData } from '@/types/boxoffice';
 import { getImageUrl } from '@/services/tmdb';
