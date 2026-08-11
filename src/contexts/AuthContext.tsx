@@ -16,8 +16,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  signup: (name: string, email: string, password: string) => Promise<AuthUser>;
   logout: () => void;
 }
 
@@ -30,11 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('ct_token');
+      const storedToken = localStorage.getItem('ct_token');
       const storedUser = localStorage.getItem('ct_user');
-      if (stored && storedUser) {
-        setToken(stored);
-        setUser(JSON.parse(storedUser));
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser) as AuthUser);
       }
     } catch {
       localStorage.removeItem('ct_token');
@@ -44,21 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  function persist(t: string, u: AuthUser) {
-    localStorage.setItem('ct_token', t);
-    localStorage.setItem('ct_user', JSON.stringify(u));
-    setToken(t);
-    setUser(u);
+  function persist(nextToken: string, nextUser: AuthUser) {
+    localStorage.setItem('ct_token', nextToken);
+    localStorage.setItem('ct_user', JSON.stringify(nextUser));
+    setToken(nextToken);
+    setUser(nextUser);
   }
 
   async function login(email: string, password: string) {
     const { data } = await axios.post('/api/auth/login', { email, password });
     persist(data.token, data.user);
+    return data.user as AuthUser;
   }
 
   async function signup(name: string, email: string, password: string) {
     const { data } = await axios.post('/api/auth/register', { name, email, password });
     persist(data.token, data.user);
+    return data.user as AuthUser;
   }
 
   function logout() {
@@ -75,4 +77,10 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
+}
+
+export function roleHome(role: UserRole): string {
+  if (role === 'ADMIN') return '/admin';
+  if (role === 'DISTRIBUTOR') return '/distributor';
+  return '/';
 }
