@@ -8,7 +8,7 @@ import { useFavorites, useWatchlist, useToggleFavorite, useToggleWatchlist } fro
 import { useWatchProviders } from '@/hooks/useTmdbMovies';
 import { detectUserCountry } from '@/utils/location';
 import { getBookingUrl } from '@/utils/booking';
-import { isOttAvailable, getBestOttUrl, getDefaultOttUrl } from '@/utils/ott';
+import { getBestOttUrl } from '@/utils/ott';
 
 interface Props {
   movieId: number;
@@ -17,7 +17,7 @@ interface Props {
   status?: string | null;
 }
 
-export function ActionButtons({ movieId, movieTitle, releaseDate, status }: Props) {
+export function ActionButtons({ movieId, movieTitle }: Props) {
   const { user, token } = useAuth();
   const { data: favorites } = useFavorites(token);
   const { data: watchlist } = useWatchlist(token);
@@ -27,17 +27,7 @@ export function ActionButtons({ movieId, movieTitle, releaseDate, status }: Prop
 
   const isFav = favorites?.some((f) => f.movieId === movieId) ?? false;
   const isInWatchlist = watchlist?.some((w) => w.movieId === movieId) ?? false;
-
-  const dateBasedOtt = useMemo(() => isOttAvailable({ release_date: releaseDate }), [releaseDate]);
-  const providerOtt = useMemo(
-    () => (movieTitle ? getBestOttUrl(providers, movieTitle, 'IN') : null),
-    [providers, movieTitle]
-  );
-  const ottInfo = useMemo(() => {
-    if (providerOtt) return providerOtt;
-    if (dateBasedOtt && movieTitle) return { url: getDefaultOttUrl(movieTitle), platformName: 'Netflix' };
-    return null;
-  }, [providerOtt, dateBasedOtt, movieTitle]);
+  const ottInfo = useMemo(() => (movieTitle ? getBestOttUrl(providers, movieTitle, 'IN') : null), [providers, movieTitle]);
 
   const handleBooking = async () => {
     if (!movieTitle) return;
@@ -46,7 +36,7 @@ export function ActionButtons({ movieId, movieTitle, releaseDate, status }: Prop
   };
 
   const handleWatch = () => {
-    const url = providers?.results?.IN?.link ?? providers?.results?.US?.link ?? ottInfo?.url;
+    const url = ottInfo?.url;
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -78,8 +68,6 @@ export function ActionButtons({ movieId, movieTitle, releaseDate, status }: Prop
           <Ticket className="h-4 w-4" /> Book Tickets
         </button>
       ) : null}
-
-      {!ottInfo && !movieTitle ? <span className="text-sm text-white/40">Not Available</span> : null}
     </div>
   );
 }
