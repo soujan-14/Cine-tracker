@@ -89,6 +89,10 @@ export async function searchMovies(query: string, page = 1): Promise<TmdbPaginat
 export interface DiscoverParams {
   with_genres?: string;
   primary_release_year?: number;
+  primary_release_date_gte?: string;
+  primary_release_date_lte?: string;
+  with_release_type?: string;
+  region?: string;
   'vote_average.gte'?: number;
   'vote_count.gte'?: number;
   sort_by?: string;
@@ -102,6 +106,27 @@ export async function discoverMovies(
     Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 0)
   );
   return fetchFromTmdb<TmdbPaginatedResponse<Movie>>('/discover/movie', cleaned);
+}
+
+export async function getRegionalTrendingMovies(region: string, page = 1): Promise<TmdbPaginatedResponse<Movie>> {
+  const normalizedRegion = region.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(normalizedRegion)) throw new Error('Invalid region code');
+
+  const today = new Date();
+  const recentStart = new Date(today);
+  recentStart.setUTCDate(today.getUTCDate() - 60);
+  const recentStartDate = recentStart.toISOString().slice(0, 10);
+  const todayDate = today.toISOString().slice(0, 10);
+
+  return discoverMovies({
+    region: normalizedRegion,
+    sort_by: 'popularity.desc',
+    primary_release_date_gte: recentStartDate,
+    primary_release_date_lte: todayDate,
+    with_release_type: '2|3',
+    'vote_count.gte': 20,
+    page,
+  });
 }
 
 export async function getMovieDetails(id: number | string): Promise<MovieDetails> {
