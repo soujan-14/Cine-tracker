@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { Movie, MovieDetails, MovieCredits, MovieVideosResponse, TmdbPaginatedResponse, WatchProvidersResult } from '@/types/tmdb';
 
-const TMDB_BASE_URL = process.env.TMDB_BASE_URL || process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.tmdb.org/3';
+const TMDB_BASE_URL = process.env.TMDB_BASE_URL || process.env.NEXT_PUBLIC_TMDB_BASE_URL || 'https://api.themoviedb.org/3';
 const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || process.env.TMDB_API_KEY;
 const TMDB_ACCESS_TOKEN = process.env.TMDB_ACCESS_TOKEN;
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE_URL || 'https://image.tmdb.org/t/p';
@@ -9,10 +9,7 @@ const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_TMDB_IMAGE_BASE_URL || 'https://i
 export const tmdbAxios: AxiosInstance = axios.create({
   baseURL: TMDB_BASE_URL,
   timeout: 10000,
-  headers: {
-    Accept: 'application/json',
-    ...(TMDB_ACCESS_TOKEN ? { Authorization: `Bearer ${TMDB_ACCESS_TOKEN}` } : {}),
-  },
+  headers: { Accept: 'application/json', ...(TMDB_ACCESS_TOKEN ? { Authorization: `Bearer ${TMDB_ACCESS_TOKEN}` } : {}) },
   params: TMDB_ACCESS_TOKEN || !TMDB_API_KEY ? {} : { api_key: TMDB_API_KEY },
 });
 
@@ -25,34 +22,19 @@ export function getImageUrl(path: string | null | undefined, size: 'w300' | 'w50
 async function fetchFromTmdb<T>(endpoint: string, params: Record<string, any> = {}): Promise<T> {
   if (!TMDB_ACCESS_TOKEN && !TMDB_API_KEY) throw new Error('TMDB credentials are not configured on the server.');
   try {
-    const response = await tmdbAxios.get<T>(endpoint, {
-      params: { ...(!TMDB_ACCESS_TOKEN ? { api_key: TMDB_API_KEY } : {}), ...params },
-    });
+    const response = await tmdbAxios.get<T>(endpoint, { params: { ...(!TMDB_ACCESS_TOKEN ? { api_key: TMDB_API_KEY } : {}), ...params } });
     return response.data;
   } catch (error: any) {
-    const message = error.response?.data?.status_message || error.message || 'Failed to communicate with TMDB API service.';
-    throw new Error(message);
+    throw new Error(error.response?.data?.status_message || error.message || 'Failed to communicate with TMDB API service.');
   }
 }
 
 export async function getTrendingMovies(page = 1): Promise<TmdbPaginatedResponse<Movie>> { return fetchFromTmdb('/trending/movie/day', { page }); }
 export async function getTopRatedMovies(page = 1): Promise<TmdbPaginatedResponse<Movie>> { return fetchFromTmdb('/movie/top_rated', { page }); }
 export async function getUpcomingMovies(page = 1): Promise<TmdbPaginatedResponse<Movie>> { return fetchFromTmdb('/movie/upcoming', { page }); }
+export async function searchMovies(query: string, page = 1): Promise<TmdbPaginatedResponse<Movie>> { if (!query || !query.trim()) return { page: 1, results: [], total_pages: 0, total_results: 0 }; return fetchFromTmdb('/search/movie', { query: query.trim(), page }); }
 
-export async function searchMovies(query: string, page = 1): Promise<TmdbPaginatedResponse<Movie>> {
-  if (!query || !query.trim()) return { page: 1, results: [], total_pages: 0, total_results: 0 };
-  return fetchFromTmdb('/search/movie', { query: query.trim(), page });
-}
-
-export interface DiscoverParams {
-  with_genres?: string;
-  primary_release_year?: number;
-  'vote_average.gte'?: number;
-  'vote_count.gte'?: number;
-  sort_by?: string;
-  page?: number;
-}
-
+export interface DiscoverParams { with_genres?: string; primary_release_year?: number; 'vote_average.gte'?: number; 'vote_count.gte'?: number; sort_by?: string; page?: number; }
 export async function discoverMovies(params: DiscoverParams = {}): Promise<TmdbPaginatedResponse<Movie>> {
   const cleaned = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 0));
   return fetchFromTmdb('/discover/movie', cleaned);
