@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   creator: 'Soujan',
   metadataBase: new URL('https://cinetracker.app'),
   icons: {
-    icon: [{ url: '/logo.png', type: 'image/png', sizes: 'any' }],
-    apple: [{ url: '/logo.png', type: 'image/png' }],
-    shortcut: ['/logo.png'],
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    shortcut: ['/favicon.svg'],
   },
   openGraph: {
     type: 'website',
