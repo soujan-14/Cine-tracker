@@ -7,6 +7,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json(await getWatchProvidersMerged(id));
   } catch (error) {
     console.error('[movie/watch-providers]', error);
-    return NextResponse.json({ id: Number(id), results: {} }, { status: 200 });
+    return NextResponse.json({ results: {} }, { status: 200 });
   }
 }
