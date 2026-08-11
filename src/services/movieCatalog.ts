@@ -34,9 +34,7 @@ function normalizeGenreList(value: unknown): { id: number; name: string }[] {
 function normalizeCast(value: unknown): CastMember[] {
   if (!Array.isArray(value)) return [];
   return value.map((item, index) => {
-    if (typeof item === 'string') {
-      return { id: -(index + 1), name: item, original_name: item, character: '', profile_path: null, order: index };
-    }
+    if (typeof item === 'string') return { id: -(index + 1), name: item, original_name: item, character: '', profile_path: null, order: index };
     const record = item as Record<string, unknown>;
     const name = String(record.name ?? record.original_name ?? '');
     return { id: Number(record.id) || -(index + 1), name, original_name: String(record.original_name ?? name), character: String(record.character ?? ''), profile_path: asString(record.profile_path), order: Number(record.order) || index };
@@ -46,9 +44,7 @@ function normalizeCast(value: unknown): CastMember[] {
 function normalizeCrew(value: unknown): CrewMember[] {
   if (!Array.isArray(value)) return [];
   return value.map((item, index) => {
-    if (typeof item === 'string') {
-      return { id: -(index + 1), name: item, original_name: item, job: '', department: '', profile_path: null };
-    }
+    if (typeof item === 'string') return { id: -(index + 1), name: item, original_name: item, job: '', department: '', profile_path: null };
     const record = item as Record<string, unknown>;
     const name = String(record.name ?? record.original_name ?? '');
     return { id: Number(record.id) || -(index + 1), name, original_name: String(record.original_name ?? name), job: String(record.job ?? ''), department: String(record.department ?? ''), profile_path: asString(record.profile_path) };
@@ -78,9 +74,7 @@ function movieFromCustom(movie: any): Movie {
 export async function resolveMovieRecord(id: number | string) {
   const numericId = Number(id);
   if (!Number.isInteger(numericId)) return null;
-  return prisma.movie.findFirst({
-    where: { OR: [{ id: numericId }, { tmdbId: numericId }] },
-  });
+  return prisma.movie.findFirst({ where: { OR: [{ id: numericId }, { tmdbId: numericId }] } });
 }
 
 export async function resolveTmdbId(id: number | string): Promise<number | null> {
@@ -94,9 +88,10 @@ export async function searchMovieCatalog(query: string, page = 1): Promise<TmdbP
   const cleanQuery = query.trim();
   if (!cleanQuery) return { page: 1, results: [], total_pages: 0, total_results: 0 };
 
+  const emptyTmdb: TmdbPaginatedResponse<Movie> = { page, results: [], total_pages: 0, total_results: 0 };
   const [customMovies, tmdb] = await Promise.all([
     prisma.movie.findMany({ orderBy: { updatedAt: 'desc' }, take: 200 }),
-    searchMovies(cleanQuery, page),
+    searchMovies(cleanQuery, page).catch(() => emptyTmdb),
   ]);
 
   const normalized = cleanQuery.toLocaleLowerCase();
@@ -104,8 +99,7 @@ export async function searchMovieCatalog(query: string, page = 1): Promise<TmdbP
   const partialCustom: Movie[] = [];
   for (const movie of customMovies) {
     const searchable = [movie.title, movie.originalTitle, JSON.stringify(movie.customCast ?? []), JSON.stringify(movie.customCrew ?? []), JSON.stringify(movie.customGenres ?? [])].filter(Boolean).join(' ').toLocaleLowerCase();
-    const titleExact = movie.title.trim().toLocaleLowerCase() === normalized;
-    if (titleExact) exactCustom.push(movieFromCustom(movie));
+    if (movie.title.trim().toLocaleLowerCase() === normalized) exactCustom.push(movieFromCustom(movie));
     else if (searchable.includes(normalized)) partialCustom.push(movieFromCustom(movie));
   }
 
@@ -133,15 +127,9 @@ export async function getMovieDetailsMerged(id: number | string): Promise<MovieD
   const record = await resolveMovieRecord(id);
   const tmdbId = record?.tmdbId ?? (Number(id) > 0 ? Number(id) : null);
   let tmdb: MovieDetails | null = null;
-
   if (tmdbId) {
-    try {
-      tmdb = await getMovieDetails(tmdbId);
-    } catch {
-      tmdb = null;
-    }
+    try { tmdb = await getMovieDetails(tmdbId); } catch { tmdb = null; }
   }
-
   if (!record && !tmdb) throw new Error('Movie not found.');
 
   const genres = record?.customGenres ? normalizeGenreList(record.customGenres) : (tmdb?.genres ?? []);
@@ -157,7 +145,7 @@ export async function getMovieDetailsMerged(id: number | string): Promise<MovieD
   const merged: MovieDetails = {
     id: record?.id ?? tmdb!.id,
     title: record?.title ?? tmdb!.title,
-    original_title: record?.originalTitle ?? tmdb!.original_title ?? record?.title ?? tmdb!.title,
+    original_title: record?.originalTitle ?? tmdb?.original_title ?? record?.title ?? tmdb!.title,
     overview: record?.overview ?? tmdb?.overview ?? '',
     poster_path: record?.customPoster ?? tmdb?.poster_path ?? null,
     backdrop_path: record?.customBackdrop ?? tmdb?.backdrop_path ?? null,
