@@ -3,10 +3,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import axios from 'axios';
 
+export type UserRole = 'USER' | 'ADMIN' | 'DISTRIBUTOR';
+
 interface AuthUser {
   id: string;
   name: string;
   email: string;
+  role: UserRole;
 }
 
 interface AuthContextValue {
@@ -25,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Rehydrate from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem('ct_token');
@@ -35,7 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(JSON.parse(storedUser));
       }
     } catch {
-      // ignore parse errors
+      localStorage.removeItem('ct_token');
+      localStorage.removeItem('ct_user');
     } finally {
       setIsLoading(false);
     }
@@ -65,11 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
-  return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

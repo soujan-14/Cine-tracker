@@ -7,14 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+  DISTRIBUTOR
+}
+
 model User {
-  id        String      @id @default(uuid())
-  name      String
-  email     String      @unique
-  password  String
-  createdAt DateTime    @default(now())
-  favorites Favorite[]
-  watchlist Watchlist[]
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  password     String
+  role         UserRole     @default(USER)
+  createdAt    DateTime     @default(now())
+  favorites    Favorite[]
+  watchlist    Watchlist[]
+  boxOffice    BoxOffice[]  @relation("DistributorBoxOffice")
 }
 
 model Favorite {
@@ -23,7 +31,6 @@ model Favorite {
   movieId   Int
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([userId, movieId])
 }
 
@@ -33,6 +40,30 @@ model Watchlist {
   movieId   Int
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([userId, movieId])
+}
+
+model Movie {
+  id              Int         @id
+  title           String
+  customBoxOffice Decimal?    @db.Decimal(18, 2)
+  customPoster    String?
+  customTrailer   String?
+  customCast      Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  boxOffice       BoxOffice[]
+}
+
+model BoxOffice {
+  id               String   @id @default(uuid())
+  movieId          Int
+  distributorId    String
+  dailyCollection  Decimal? @db.Decimal(18, 2)
+  weekendCollection Decimal? @db.Decimal(18, 2)
+  createdAt        DateTime @default(now())
+  movie            Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  distributor     User     @relation("DistributorBoxOffice", fields: [distributorId], references: [id], onDelete: Cascade)
+  @@index([movieId, createdAt])
+  @@index([distributorId, createdAt])
 }
